@@ -116,7 +116,6 @@ def verify(img1_path, img2_path = '', model_name = 'VGG-Face', distance_metric =
 	else:
 		if model_name == 'Ensemble':
 			Boosting.validate_model(model)
-			models = model.copy()
 		else:
 			models = {}
 			models[model_name] = model
@@ -176,8 +175,7 @@ def verify(img1_path, img2_path = '', model_name = 'VGG-Face', distance_metric =
 						distance = dst.findEuclideanDistance(dst.l2_normalize(img1_representation), dst.l2_normalize(img2_representation))
 					else:
 						raise ValueError("Invalid distance_metric passed - ", distance_metric)
-					
-					distance = np.float64(distance) #causes trobule for euclideans in api calls if this is not set (issue #175)
+
 					#----------------------
 					#decision
 					
@@ -282,7 +280,6 @@ def analyze(img_path, actions = ['emotion', 'age', 'gender', 'race']
 		The function returns a dictionary. If img_path is a list, then it will return list of dictionary.
 		
 		{
-			"region": {'x': 230, 'y': 120, 'w': 36, 'h': 45},
 			"age": 28.66,
 			"gender": "woman",
 			"dominant_emotion": "neutral",
@@ -363,9 +360,6 @@ def analyze(img_path, actions = ['emotion', 'age', 'gender', 'race']
 		pbar = tqdm(range(0,len(actions)), desc='Finding actions', disable = disable_option)
 
 		img_224 = None # Set to prevent re-detection
-
-		region = [] # x, y, w, h of the detected face region
-		region_labels = ['x', 'y', 'w', 'h']
 		
 		#facial attribute analysis
 		for index in pbar:
@@ -373,79 +367,71 @@ def analyze(img_path, actions = ['emotion', 'age', 'gender', 'race']
 			pbar.set_description("Action: %s" % (action))
 			
 			if action == 'emotion':
-				emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
-				img, region = functions.preprocess_face(img = img_path, target_size = (48, 48), grayscale = True, enforce_detection = enforce_detection, detector_backend = detector_backend, return_region = True)
+					try:
+						emotion_labels = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
+						img = functions.preprocess_face(img = img_path, target_size = (48, 48), grayscale = True, enforce_detection = enforce_detection, detector_backend = detector_backend)
+						emotion_predictions = models['emotion'].predict(img)[0,:]
 
-				resp_obj["region"] = {}
+						sum_of_predictions = emotion_predictions.sum()
 
-				for i, parameter in enumerate(region_labels):
-					resp_obj["region"][parameter] = region[i]
+						resp_obj["emotion"] = {}
+						
+						for i in range(0, len(emotion_labels)):
+							emotion_label = emotion_labels[i]
+							emotion_prediction = 100 * emotion_predictions[i] / sum_of_predictions
+							resp_obj["emotion"][emotion_label] = emotion_prediction
+						
+						resp_obj["dominant_emotion"] = emotion_labels[np.argmax(emotion_predictions)]
+					except:
+						resp_obj['is_fake'] = True
 
-				emotion_predictions = models['emotion'].predict(img)[0,:]
-
-				sum_of_predictions = emotion_predictions.sum()
-
-				resp_obj["emotion"] = {}
-				
-				for i in range(0, len(emotion_labels)):
-					emotion_label = emotion_labels[i]
-					emotion_prediction = 100 * emotion_predictions[i] / sum_of_predictions
-					resp_obj["emotion"][emotion_label] = emotion_prediction
-				
-				resp_obj["dominant_emotion"] = emotion_labels[np.argmax(emotion_predictions)]
 
 			elif action == 'age':
-				if img_224 is None:
-					img_224, region = functions.preprocess_face(img = img_path, target_size = (224, 224), grayscale = False, enforce_detection = enforce_detection, detector_backend = detector_backend, return_region = True)
-				
-				resp_obj["region"] = {}
+					try:
+						if img_224 is None:
+								img_224 = functions.preprocess_face(img = img_path, target_size = (224, 224), grayscale = False, enforce_detection = enforce_detection, detector_backend = detector_backend)
+						age_predictions = models['age'].predict(img_224)[0,:]
+						apparent_age = Age.findApparentAge(age_predictions)
 
-				for i, parameter in enumerate(region_labels):
-					resp_obj["region"][parameter] = region[i]
-				
-				age_predictions = models['age'].predict(img_224)[0,:]
-				apparent_age = Age.findApparentAge(age_predictions)
-
-				resp_obj["age"] = int(apparent_age)
+						resp_obj["age"] = int(apparent_age)
+					except:
+							resp_obj['is_fake'] = True
 
 			elif action == 'gender':
-				if img_224 is None:
-					img_224, region = functions.preprocess_face(img = img_path, target_size = (224, 224), grayscale = False, enforce_detection = enforce_detection, detector_backend = detector_backend, return_region = True)
+					try:
+						if img_224 is None:
+								img_224 = functions.preprocess_face(img = img_path, target_size = (224, 224), grayscale = False, enforce_detection = enforce_detection, detector_backend = detector_backend)
 
-				resp_obj["region"] = {}
+						gender_prediction = models['gender'].predict(img_224)[0,:]
 
-				for i, parameter in enumerate(region_labels):
-					resp_obj["region"][parameter] = region[i]
-				
-				gender_prediction = models['gender'].predict(img_224)[0,:]
+						if np.argmax(gender_prediction) == 0:
+							gender = "Woman"
+						elif np.argmax(gender_prediction) == 1:
+							gender = "Man"
 
-				if np.argmax(gender_prediction) == 0:
-					gender = "Woman"
-				elif np.argmax(gender_prediction) == 1:
-					gender = "Man"
-
-				resp_obj["gender"] = gender
+						resp_obj["gender"] = gender
+					except:
+						resp_obj['is_fake'] = True
 
 			elif action == 'race':
-				if img_224 is None:
-					img_224, region = functions.preprocess_face(img = img_path, target_size = (224, 224), grayscale = False, enforce_detection = enforce_detection, detector_backend = detector_backend, return_region = True) #just emotion model expects grayscale images
-				race_predictions = models['race'].predict(img_224)[0,:]
-				race_labels = ['asian', 'indian', 'black', 'white', 'middle eastern', 'latino hispanic']
+					try:
+						if img_224 is None:
+								img_224 = functions.preprocess_face(img = img_path, target_size = (224, 224), grayscale = False, enforce_detection = enforce_detection, detector_backend = detector_backend) #just emotion model expects grayscale images
+						race_predictions = models['race'].predict(img_224)[0,:]
+						race_labels = ['asian', 'indian', 'black', 'white', 'middle eastern', 'latino hispanic']
 
-				resp_obj["region"] = {}
+						sum_of_predictions = race_predictions.sum()
+						
+						resp_obj["race"] = {}
+						for i in range(0, len(race_labels)):
+							race_label = race_labels[i]
+							race_prediction = 100 * race_predictions[i] / sum_of_predictions
+							resp_obj["race"][race_label] = race_prediction
+						
+						resp_obj["dominant_race"] = race_labels[np.argmax(race_predictions)]
+					except:
+						resp_obj['is_fake'] = True
 
-				for i, parameter in enumerate(region_labels):
-					resp_obj["region"][parameter] = region[i]
-				
-				sum_of_predictions = race_predictions.sum()
-				
-				resp_obj["race"] = {}
-				for i in range(0, len(race_labels)):
-					race_label = race_labels[i]
-					race_prediction = 100 * race_predictions[i] / sum_of_predictions
-					resp_obj["race"][race_label] = race_prediction
-				
-				resp_obj["dominant_race"] = race_labels[np.argmax(race_predictions)]
 			
 		#---------------------------------
 		
@@ -627,11 +613,10 @@ def find(img_path, db_path, model_name ='VGG-Face', distance_metric = 'cosine', 
 				#--------------------------------
 				#decide input shape
 				input_shape = functions.find_input_shape(custom_model)	
-				input_shape_x = input_shape[0]; input_shape_y = input_shape[1]
 				
 				#--------------------------------
 				
-				img = functions.preprocess_face(img = img_path, target_size = (input_shape_y, input_shape_x)
+				img = functions.preprocess_face(img = img_path, target_size = input_shape
 					, enforce_detection = enforce_detection
 					, detector_backend = detector_backend)
 					
