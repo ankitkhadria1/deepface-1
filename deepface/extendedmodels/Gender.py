@@ -38,8 +38,9 @@ def loadModel():
 	
 	if os.path.isfile(home+'/.deepface/weights/gender_model_weights.h5') != True:
 		print("gender_model_weights.h5 will be downloaded...")
-		
-		url = 'https://drive.google.com/uc?id=1wUXRVlbsni2FN9-jkS_f4UTUrm1bRLyk'
+
+		# https://drive.google.com/file/d/1T5qnV4s-au24MAkjZ53SZtCk8vup8Wi-/view?usp=sharing
+		url = 'https://drive.google.com/uc?id=1T5qnV4s-au24MAkjZ53SZtCk8vup8Wi-'
 		output = home+'/.deepface/weights/gender_model_weights.h5'
 		gdown.download(url, output, quiet=False)
 	

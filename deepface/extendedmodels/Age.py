@@ -41,7 +41,8 @@ def loadModel():
 	if os.path.isfile(home+'/.deepface/weights/age_model_weights.h5') != True:
 		print("age_model_weights.h5 will be downloaded...")
 		
-		url = 'https://drive.google.com/uc?id=1YCox_4kJ-BYeXq27uUbasu--yz28zUMV'
+		# https://drive.google.com/file/d/1_yy137mGjpPU2rpqT1sSsUEPkfq90jbk/view?usp=sharing
+		url = 'https://drive.google.com/uc?id=1_yy137mGjpPU2rpqT1sSsUEPkfq90jbk'
 		output = home+'/.deepface/weights/age_model_weights.h5'
 		gdown.download(url, output, quiet=False)
 	

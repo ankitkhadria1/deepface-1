@@ -55,7 +55,8 @@ def loadModel():
 		#TO-DO: upload weights to google drive
 		
 		#zip
-		url = 'https://drive.google.com/uc?id=13iUHHP3SlNg53qSuQZDdHDSDNdBP9nwy'
+		# https://drive.google.com/file/d/1Nes0q6EAA2VXwnHfQJOrPn_67bCwIKKV/view?usp=sharing
+		url = 'https://drive.google.com/uc?id=1Nes0q6EAA2VXwnHfQJOrPn_67bCwIKKV'
 		output = home+'/.deepface/weights/facial_expression_model_weights.zip'
 		gdown.download(url, output, quiet=False)
 		
