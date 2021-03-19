@@ -530,7 +530,7 @@ def InceptionResNetV2():
 
 	return model
 
-def loadModel(url = 'https://drive.google.com/uc?id=1971Xk5RwedbudGgTIrGAL4F7Aifu7id1'):
+def loadModel(url = 'https://drive.google.com/uc?id=1TBsnnYC-nKh_vyCgPR5N6sAES2TTJHCV'):
 	model = InceptionResNetV2()
 	
 	#-----------------------------------
