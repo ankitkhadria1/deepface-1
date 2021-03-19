@@ -25,8 +25,7 @@ def loadModel():
 	#check the availability of pre-trained weights
 	
 	home = str(Path.home())
-	
-	url = "https://drive.google.com/uc?id=1LVB3CdVejpmGHM28BpqqkbZP5hDEcdZY"
+	url = "https://drive.google.com/uc?id=17Wz3z1pguSJioAdIr-5b6lmwYUXxC2gb"
 	file_name = "arcface_weights.h5"
 	output = home+'/.deepface/weights/'+file_name
 	
